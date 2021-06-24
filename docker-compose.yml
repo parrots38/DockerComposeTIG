@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+    telegraf:
+        image: telegraf:${TELEGRAF_VERSION}
+        volumes:
+            - "./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
+        env_file:
+            - .env
+        networks:
+            - TIG
+        restart: always
+    influxdb:
+        image: influxdb:${INFLUX_VERSION}
+        ports:
+            - ${INFLUXDB_PORT}:${INFLUXDB_PORT}
+        volumes:
+            - "./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
+        env_file:
+            - .env
+        networks:
+            - "TIG"
+        depends_on:
+            - telegraf
+        restart: always
+    grafana:
+        image: grafana/grafana:${GRAFANA_VERSION}
+        ports:
+            - ${GRAFANA_PORT}:${GRAFANA_PORT}
+        volumes:
+            - "./grafana/plugins:/usr/share/grafana/plugins-bundled"
+        env_file:
+            - .env
+        networks:
+            - "TIG"
+        depends_on:
+            - influxdb
+        restart: always
+
+networks:
+    TIG:
