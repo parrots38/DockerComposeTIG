@@ -1,10 +1,15 @@
 version: "3"
 
+# создаваемые контейнеры
 services:
     telegraf:
         image: telegraf:${TELEGRAF_VERSION}
+        # образ, из которого создается контейнер,
+        # этот образ базовый и есть на докер-хаб, поэтому на системе,
+        # где его нет, он автоматически скачается
         volumes:
             - "./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
+        # файл конфига общий
         env_file:
             - .env
         networks:
@@ -18,10 +23,18 @@ services:
             - "./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
         env_file:
             - .env
+        # файл с переменными окружения для docker-compose
+        environment:
+            - INFLUXDB_DB=Jmeter
+            - INFLUXDB_ADMIN_USER=${INFLUX_ADMIN_USER}
+            - INFLUXDB_ADMIN_PASSWORD=${INFLUX_ADMIN_PASSWORD}
+        # это переменные окружения, которые добавляются к docker run при
+        # автоматическом запуске этого контейнера influxdb
         networks:
             - "TIG"
         depends_on:
             - telegraf
+        # этот контейнер запустится после контейнера telegraf
         restart: always
     grafana:
         image: grafana/grafana:${GRAFANA_VERSION}
@@ -31,6 +44,9 @@ services:
             - "./grafana/plugins:/usr/share/grafana/plugins-bundled"
         env_file:
             - .env
+        environment:
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_USER_PASSWORD}
         networks:
             - "TIG"
         depends_on:
@@ -39,3 +55,4 @@ services:
 
 networks:
     TIG:
+    # создастся автоматически сеть вида directory-name_TIG
