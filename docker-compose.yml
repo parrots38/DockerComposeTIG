@@ -2,39 +2,43 @@ version: "3"
 
 # создаваемые контейнеры
 services:
-    telegraf:
-        image: telegraf:${TELEGRAF_VERSION}
-        # образ, из которого создается контейнер,
-        # этот образ базовый и есть на докер-хаб, поэтому на системе,
-        # где его нет, он автоматически скачается
-        volumes:
-            - "./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
-        # файл конфига общий
-        env_file:
-            - .env
-        networks:
-            - TIG
-        restart: always
     influxdb:
         image: influxdb:${INFLUX_VERSION}
         ports:
             - ${INFLUXDB_PORT}:${INFLUXDB_PORT}
         volumes:
-            - "./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
+            - "./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro"
+            - "./influxdb/data:/var/lib/influxdb"  # папка, где хранятся данные из БД
         env_file:
             - .env
         # файл с переменными окружения для docker-compose
         environment:
-            - INFLUXDB_DB=Jmeter
+            - INFLUXDB_DB=telegraf
             - INFLUXDB_ADMIN_USER=${INFLUX_ADMIN_USER}
             - INFLUXDB_ADMIN_PASSWORD=${INFLUX_ADMIN_PASSWORD}
         # это переменные окружения, которые добавляются к docker run при
         # автоматическом запуске этого контейнера influxdb
         networks:
             - "TIG"
+        restart: always
+    telegraf:
+        image: telegraf:${TELEGRAF_VERSION}
+        # образ, из которого создается контейнер,
+        # этот образ базовый и есть на докер-хаб, поэтому на системе,
+        # где его нет, он автоматически скачается
+        volumes:
+            - "./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro"
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /sys:/rootfs/sys:ro
+            - /proc:/rootfs/proc:ro
+            - /etc:/rootfs/etc:ro
+        # файл конфига общий
+        env_file:
+            - .env
         depends_on:
-            - telegraf
-        # этот контейнер запустится после контейнера telegraf
+            - influxdb
+        networks:
+            - TIG
         restart: always
     grafana:
         image: grafana/grafana:${GRAFANA_VERSION}
