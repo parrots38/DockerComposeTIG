@@ -34,6 +34,8 @@ services:
             - /proc:/rootfs/proc:ro
             - /etc:/rootfs/etc:ro
         # файл конфига общий
+        ports:
+            - '8125:8125'
         env_file:
             - .env
         depends_on:
